@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disney BSDF: A Revolutionary Material Model</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ffa726);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 20s linear infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 3rem 2rem;
+        }
+
+        .paragraph {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            text-align: justify;
+            padding: 1.5rem;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 15px;
+            border-left: 4px solid #ff6b6b;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .paragraph::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 107, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .paragraph:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-left-color: #ffa726;
+        }
+
+        .paragraph:hover::before {
+            left: 100%;
+        }
+
+        .paragraph:nth-child(2) {
+            border-left-color: #4ecdc4;
+        }
+
+        .paragraph:nth-child(2):hover {
+            border-left-color: #45b7aa;
+        }
+
+        .paragraph:nth-child(3) {
+            border-left-color: #a8e6cf;
+        }
+
+        .paragraph:nth-child(3):hover {
+            border-left-color: #88d8a3;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #ff6b6b20 0%, #ffa72620 100%);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .images-section {
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .images-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+            margin: 0;
+        }
+
+        .images-section {
+            padding: 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .images-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+            margin: 0;
+        }
+
+        .image-wrapper {
+            width: 100%;
+            text-align: center;
+            background: white;
+            border-radius: 0;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .image-wrapper:hover {
+            transform: none;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .display-image {
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+            border-radius: 0;
+            border: none;
+            transition: all 0.3s ease;
+            object-fit: contain;
+            display: block;
+        }
+
+        .display-image:hover {
+            border-color: #ff6b6b;
+            transform: scale(1.02);
+        }
+
+        .image-caption {
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+
+        .section2-header {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section2-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: float 20s linear infinite;
+        }
+
+        .section2-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section2-header .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .restir-images-section {
+            padding: 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .restir-images-container {
+            display: flex;
+            gap: 2rem;
+            justify-content: space-between;
+            width: 100%;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .restir-image-wrapper {
+            flex: 1;
+            text-align: center;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .restir-image-wrapper:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .references-section {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem;
+            margin-top: 0;
+        }
+
+        .references-section h3 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 0.5rem;
+        }
+
+        .reference-list {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .reference-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            transition: all 0.3s ease;
+        }
+
+        .reference-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #e74c3c;
+            transform: translateX(5px);
+        }
+
+        .reference-number {
+            color: #3498db;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-right: 1rem;
+            min-width: 2rem;
+            flex-shrink: 0;
+        }
+
+        .reference-link {
+            color: #ecf0f1;
+            text-decoration: none;
+            line-height: 1.6;
+            transition: color 0.3s ease;
+        }
+
+        .reference-link:hover {
+            color: #3498db;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .section2-header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 2rem 1.5rem;
+            }
+            
+            .paragraph {
+                font-size: 1rem;
+                padding: 1rem;
+            }
+
+            .images-container {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .images-section {
+                padding: 0;
+            }
+
+            .display-image {
+                width: 100%;
+                object-fit: contain;
+            }
+
+            .image-wrapper {
+                padding: 1.5rem;
+            }
+
+            .restir-images-container {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1.5rem;
+            }
+
+            .restir-image-wrapper {
+                padding: 2rem;
+            }
+
+            .references-section {
+                padding: 1.5rem;
+            }
+
+            .reference-item {
+                flex-direction: column;
+                text-align: left;
+            }
+
+            .reference-number {
+                margin-bottom: 0.5rem;
+                margin-right: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Disney BSDF</h1>
+        </div>
+        
+        <div class="content">
+            <div class="paragraph">
+                For the first part of the project, I implemented the Disney BSDF to model a wider range of materials compared to the GGX BRDF. Disney BSDF utilizes 10 parameters to control material properties. Below are six rendered materials that are challenging to model using GGX alone. Note that the inclusion of the subsurface parameter enables modeling of skin-like effects, which is particularly highlighted in the dragon rendering.            </div>
+            </div>
+        
+        <div class="images-section">
+            <div class="images-container">
+                <div class="image-wrapper">
+                    <img src="./ggx_disney.png" alt="Disney BSDF Material Examples" class="display-image">
+                    <div class="image-caption">Disney BSDF Material Examples</div>
+                </div>
+                <div class="image-wrapper">
+                    <img src="./dragon.png" alt="BSDF Parameter Visualization" class="display-image">
+                    <div class="image-caption">Dragon with Subsurface Scattering</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section2-header">
+            <h1>ReSTIR</h1>
+        </div>
+        
+        <div class="content">            
+            <div class="paragraph">
+                For the second part of the project, I explored and attempted to implement <span class="highlight">ReSTIR with spatial reuse</span> in my path tracer. Unfortunately, I encountered a bug in the reservoir combine step that I was unable to debug due to time constraints. As a result, the implementation for this part uses <span class="highlight">Resampled Importance Sampling (RIS) with Weighted Reservoir Sampling</span> instead of full ReSTIR.
+            </div>
+            
+            <div class="paragraph">
+                Below are the direct light contribution results using RIS with different sample counts per pixel. From left to right, the sample counts are 1, 32, and 128 samples per pixel (spp). At <span class="highlight">1 spp</span>, the image exhibits extreme noise, with many light sources barely contributing to the final image. This occurs because of the low probability of sampling important light paths with such sparse sampling. As the sample count increases to <span class="highlight">32 spp</span>, the sampling process captures more significant light contributions, reducing noise and making shadows and specular highlights more coherent. At <span class="highlight">128 spp</span>, the image shows much smoother illumination and cleaner reflections, indicating convergence toward a low-variance estimate.
+            </div>
+            
+            <div class="paragraph">
+                This behavior occurs because <span class="highlight">weighted reservoir sampling in RIS</span> selects light samples based on their contribution weight, but requires sufficient candidate samples to make effective choices. At low sample counts, many important light directions are missed, particularly for glossy surfaces or small light sources. As the sample count increases, the estimator becomes more robust by capturing more representative samples and producing more stable lighting results. This demonstrates RIS's strength in balancing importance sampling with adaptive sample selection, showing that its effectiveness improves significantly with increased sample count.
+            </div>
+        </div>
+
+        <div class="images-section">
+            <div class="images-container">
+                <div class="image-wrapper">
+                    <img src="./ris_1.png" alt="ReSTIR Temporal Resampling" class="display-image">
+                    <div class="image-caption">RIS with 1 spp</div>
+                </div>
+                <div class="image-wrapper">
+                    <img src="./ris_32.png" alt="ReSTIR Spatial Resampling" class="display-image">
+                    <div class="image-caption">RIS with 32 spp</div>
+                </div>
+                <div class="image-wrapper">
+                    <img src="./ris_128.png" alt="ReSTIR Performance Comparison" class="display-image">
+                    <div class="image-caption">RIS with 128 spp</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            CSE168 Final Project. Website template is generated by claude.ai
+        </div>
+
+        <div class="references-section">
+            <h3>References</h3>
+            <div class="reference-list">
+                <div class="reference-item">
+                    <span class="reference-number">[1]</span>
+                    <a href="https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf" target="_blank" class="reference-link">
+                        Disney Animation Studios. (2012). Physically Based Shading at Disney - BRDF Notes v3.
+                    </a>
+                </div>
+                <div class="reference-item">
+                    <span class="reference-number">[2]</span>
+                    <a href="https://agraphicsguynotes.com/posts/understanding_the_math_behind_restir_di/" target="_blank" class="reference-link">
+                        A Graphics Guy's Notes. Understanding the Math Behind ReSTIR DI.
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
